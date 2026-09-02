@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+# skill-push - 一键提交并推送豆包技能仓库
+# 用法: skill-push ["提交说明"]
+# 示例: skill-push "优化三视图模板细节"
+set -euo pipefail
+
+REPO="/Users/alix/Library/Application Support/DoubaoWork/Default/.doubaowork/agent_mode/workspace/.user_skills"
+BRANCH="main"
+REMOTE="origin"
+
+cd "$REPO"
+
+# 1. 校验仓库
+if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  echo "❌ 技能仓库未初始化: $REPO"
+  exit 1
+fi
+
+# 2. 检查是否有改动
+if [ -z "$(git status --porcelain)" ]; then
+  echo "✅ 工作区干净，无需推送。"
+  git status -sb | head -1
+  exit 0
+fi
+
+echo "=== 有改动的文件 ==="
+git status --porcelain | head -30
+echo ""
+
+# 3. 生成提交信息
+MSG="${1:-}"
+if [ -z "$MSG" ]; then
+  CHANGED=$(git status --porcelain | sed 's|^...||' | sed 's|/.*||' | sort -u | paste -sd、-)
+  MSG="更新技能：${CHANGED}"
+fi
+
+# 4. 敏感信息检查（阻止 token / 密钥 / 凭据被提交）
+if git status --porcelain | grep -qiE '(^|[ /])\.?(env|\.env\.local|id_rsa|id_ed25519|\.pem|credentials?|token|secret)' ; then
+  echo "⚠️  检测到疑似敏感文件被跟踪，已中止推送。请先处理后再推送。"
+  git status --porcelain | grep -iE 'env|id_rsa|id_ed25519|pem|credential|token|secret' | head -10
+  exit 1
+fi
+
+# 5. 提交并推送
+git add -A
+git commit -m "$MSG"
+git push "$REMOTE" "$BRANCH"
+
+# 6. 核验
+git fetch "$REMOTE" -q
+echo ""
+echo "✅ 推送完成：$(git log --oneline -1)"
+git status -sb | head -1
