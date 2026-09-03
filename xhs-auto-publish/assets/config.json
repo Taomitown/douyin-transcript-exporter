@@ -1,0 +1,9 @@
+{
+  "sources": ["weibo", "zhihu", "baidu"],
+  "top_n": 10,
+  "domains": ["科技", "生活"],
+  "keywords": ["科技", "AI", "人工智能", "数码", "手机", "效率", "工具", "生活", "实用", "技巧", "避坑", "经验", "省钱", "好物"],
+  "content_type_preference": ["image", "video", "dynamic"],
+  "account": "（填写你的小红书账号名，用于发布前核对）",
+  "schedule": "daily"
+}
